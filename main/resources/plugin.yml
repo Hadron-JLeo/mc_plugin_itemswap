@@ -1,0 +1,11 @@
+name: ItemSwapper
+version: '${project.version}'
+main: org.kerokero.itemswapper.ItemSwapper
+api-version: '1.16'
+commands:
+  iemswap:
+    description: "Swap two items with their amounts"
+    usage: "/itemswap PLAYER <item1> [amount1] <item2> [amount2]"
+    aliases: [iswap, swap]
+    permission: itemswapper.command.swap
+    permission-message: "You are missing the permission itemswapper.command.swap"
