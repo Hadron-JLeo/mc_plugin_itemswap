@@ -1,5 +1,6 @@
 package org.kerokero.itemswapper;
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -7,15 +8,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+
 public class ItemSwapCommand implements CommandExecutor, TabExecutor {
+    private static final Logger log = LoggerFactory.getLogger(ItemSwapCommand.class);
     // arg[0] Player Name
     // arg[1] Item x to trade away
     // arg[2] Item x Amount
@@ -26,8 +33,6 @@ public class ItemSwapCommand implements CommandExecutor, TabExecutor {
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
         // return false;
         Player player = Bukkit.getPlayer(args[0]);
-
-
 
         // Making sure player is not null in any case for any null-pointer exception
         if (player == null) {
@@ -44,26 +49,22 @@ public class ItemSwapCommand implements CommandExecutor, TabExecutor {
         }
 
         try {
-            Material item_x = Material.valueOf(args[1].toUpperCase());
+            String item_x = args[1].toLowerCase();
             int amount_x = Integer.parseInt(args[2]);
-            Material item_y = Material.valueOf(args[3].toUpperCase());
+            String item_y = args[3].toLowerCase();
             int amount_y = Integer.parseInt(args[4]);
 
-            if (!player.getInventory().contains(item_x, amount_x)) {
-                player.sendMessage("§cYou don't have enough " + item_x.toString().toLowerCase() + "!");
+            if (!removeItem(player, item_x, amount_x)) {
+                player.sendMessage("§cYou don't have enough " + item_x + "!");
                 return true;
             }
 
-            // Remove the items
-            player.getInventory().removeItem(new ItemStack(item_x, amount_x));
-            //player.getInventory().removeItem(new ItemStack(item_y, amount_y));
+            // Add item
+            addItem(player, item_y, amount_y);
 
-            // Add the swapped items
-            //player.getInventory().addItem(new ItemStack(item_x, amount_y));
-            player.getInventory().addItem(new ItemStack(item_y, amount_y));
-
-            player.sendMessage("§aSuccessfully swapped " + amount_x + " " + item_x.toString().toLowerCase() +
-                    " with " + amount_y + " " + item_y.toString().toLowerCase() + "!");
+            player.sendMessage("§aSuccessfully swapped " + amount_x + " " + item_x +
+                    " with " + amount_y + " " + item_y + "!");
+            return true;
         } catch (IllegalArgumentException e) {
             player.sendMessage("§cInvalid item type or amount specified.");
         }
@@ -74,5 +75,38 @@ public class ItemSwapCommand implements CommandExecutor, TabExecutor {
         return null;
     }
 
+    private boolean removeItem(Player player, String itemName, int amount) {
+        ItemStack itemStack = createItemStack(itemName, amount);
+        return player.getInventory().removeItem(itemStack).isEmpty();
+    }
+
+    private void addItem(Player player, String itemName, int amount) {
+        //ItemStack itemStack = createItemStack(player, itemName, amount);
+        //player.getInventory().addItem(itemStack);
+        String command = "minecraft:give" + " " + player.getName() + " " + itemName + " " + amount;
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+
+    }
+
+    private ItemStack createItemStack(String itemName, int amount) {
+        Material material = Material.matchMaterial(itemName);
+        ItemStack itemStack = null;
+
+        if (material != null) {
+            // Handle vanilla items
+            itemStack = new ItemStack(material, amount);
+        } else {
+            // Try to create an item stack for modded items using a command
+            //String command = "give" + " " + player.getName() + " " + itemName + " " + amount;
+            //Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+            // This assumes you can execute a command to give the item to the player
+            // and that it's handled server-side
+            log.debug("Ran into else Statement in createItemStack");
+        }
+        if (itemStack == null) {
+            itemStack = new ItemStack(Material.AIR); // Default to AIR if creation fails
+        }
+        return itemStack;
+    }
 
 }
